@@ -1,0 +1,19 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "root",
+    "password": "artgwapo_12345",
+    "database": "node_mysql_api"
+  },
+  "secret": "SUPER_SECRET_KEY_REPLACE_ME_IN_PRODUCTION",
+  "emailFrom": "madisen.auer56@ethereal.email",
+  "smtpOptions": {
+    "host": "smtp.ethereal.email",
+    "port": 587,
+    "auth": {
+      "user": "madisen.auer56@ethereal.email",
+      "pass": "HjjsNApBVrH1xehCrZ"
+    }
+  }
+}

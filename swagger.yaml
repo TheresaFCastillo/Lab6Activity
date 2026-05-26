@@ -1,0 +1,293 @@
+openapi: 3.0.0
+info:
+  title: Node.js Sign-up and Verification API
+  description: Node.js + MySQL - API with email sign-up, verification, authentication and forgot password
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4000
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [Admin, User]
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        isVerified:
+          type: boolean
+
+paths:
+  /accounts/authenticate:
+    post:
+      summary: Authenticate account credentials and return a JWT token and a cookie with a refresh token
+      operationId: authenticate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: admin@example.com
+                password:
+                  type: string
+                  example: Asdf1234
+      responses:
+        "200":
+          description: Account details, JWT access token and refresh token cookie
+          headers:
+            Set-Cookie:
+              description: refreshToken
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Account"
+                  - type: object
+                    properties:
+                      jwtToken:
+                        type: string
+
+  /accounts/refresh-token:
+    post:
+      summary: Use a refresh token to generate a new JWT token and a new refresh token
+      operationId: refreshToken
+      parameters:
+        - in: cookie
+          name: refreshToken
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Account details, new JWT access token and new refresh token cookie
+
+  /accounts/revoke-token:
+    post:
+      summary: Revoke a refresh token
+      operationId: revokeToken
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Token revoked successfully
+
+  /accounts/register:
+    post:
+      summary: Register a new user account and send a verification email
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, firstName, lastName, email, password, confirmPassword, acceptTerms]
+              properties:
+                title:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                  minLength: 6
+                confirmPassword:
+                  type: string
+                acceptTerms:
+                  type: boolean
+      responses:
+        "200":
+          description: Registration successful
+
+  /accounts/verify-email:
+    post:
+      summary: Verify a new account with a verification token received by email after registration
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Verification successful
+
+  /accounts/forgot-password:
+    post:
+      summary: Submit email address to reset the password on an account
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+      responses:
+        "200":
+          description: Password reset instructions sent
+
+  /accounts/validate-reset-token:
+    post:
+      summary: Validate the reset password token received by email after submitting to the /accounts/forgot-password route
+      operationId: validateResetToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Token is valid
+
+  /accounts/reset-password:
+    post:
+      summary: Reset the password for an account
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password, confirmPassword]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 6
+                confirmPassword:
+                  type: string
+      responses:
+        "200":
+          description: Password reset successful
+
+  /accounts:
+    get:
+      summary: Get a list of all accounts (Admin only)
+      operationId: getAll
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of all accounts
+    post:
+      summary: Create a new account (Admin only)
+      operationId: create
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Account"
+      responses:
+        "200":
+          description: Account created successfully
+
+  /accounts/{id}:
+    get:
+      summary: Get a single account by ID
+      operationId: getById
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Account details
+    put:
+      summary: Update an account
+      operationId: update
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Account"
+      responses:
+        "200":
+          description: Account updated successfully
+    delete:
+      summary: Delete an account
+      operationId: delete
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Account deleted successfully
